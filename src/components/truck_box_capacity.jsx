@@ -112,16 +112,16 @@ export default function TruckLoadCalculator() {
               <TableHead sx={{ backgroundColor: '#f1f8e9' }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>트럭 종류</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>적재 가능 박스 수</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>내부 크기 (가로×세로×높이, mm)</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>적재 가능 박스 수</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {trucks.map((truck) => (
                   <TableRow key={truck.name}>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{truck.name}</TableCell>
+                    <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{calculateBoxes(truck)}</TableCell>
                     <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{`${truck.width} × ${truck.length} × ${truck.height}`}</TableCell>
-                    <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{calculateBoxes(truck)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
