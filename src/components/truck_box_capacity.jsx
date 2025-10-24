@@ -1,5 +1,51 @@
-import React, { useState } from 'react';
-import { Container, Typography, Grid, TextField, Card, CardContent, Table, TableHead, TableRow, TableCell, TableBody, Button, Stack, Box } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import {
+  AppBar,
+  Box,
+  Card,
+  CardContent,
+  CardHeader,
+  Chip,
+  Container,
+  CssBaseline,
+  Grid,
+  InputAdornment,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TextField,
+  Toolbar,
+  Typography
+} from '@mui/material';
+import { createTheme, ThemeProvider, responsiveFontSizes } from '@mui/material/styles';
+
+let theme = createTheme({
+  palette: {
+    background: { default: '#f4f6f8' },
+    primary: { main: '#1976d2' }
+  },
+  typography: {
+    fontFamily: '"Pretendard", "Roboto", "Helvetica", "Arial", sans-serif',
+    h6: { fontWeight: 600 }
+  },
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12,
+          boxShadow: 'rgba(145, 158, 171, 0.2) 0px 0px 2px 0px, rgba(145, 158, 171, 0.12) 0px 12px 24px -4px'
+        }
+      }
+    }
+  }
+});
+
+theme = responsiveFontSizes(theme);
 
 const trucks = [
   { name: '1톤', width: 1600, length: 2800, height: 1600 },
@@ -26,109 +72,137 @@ const presetBoxes = {
   '폴록': { width: 700, length: 300, height: 440 }
 };
 
-export default function TruckLoadCalculator() {
-  const [box, setBox] = useState({ width: '', length: '', height: '' });
+export default function App() {
+  const [box, setBox] = useState({ width: '0', length: '0', height: '0' });
+  const [selectedBoxes, setSelectedBoxes] = useState([]);
+
+  // 입력 값이 특정 프리셋과 일치하는지 감지하여 중복된 값 모두 Fill 상태로 표시
+  useEffect(() => {
+    const matchedKeys = Object.keys(presetBoxes).filter(
+      (key) =>
+        parseFloat(box.width) === presetBoxes[key].width &&
+        parseFloat(box.length) === presetBoxes[key].length &&
+        parseFloat(box.height) === presetBoxes[key].height
+    );
+    setSelectedBoxes(matchedKeys);
+  }, [box]);
 
   const handleChange = (e) => {
-    setBox({ ...box, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (value === '' || /^[0-9]*\.?[0-9]*$/.test(value)) {
+      setBox({ ...box, [name]: value });
+    }
   };
 
-  const handlePresetSelect = (preset) => {
-    setBox(presetBoxes[preset]);
+  const handlePresetSelect = (key) => {
+    if (selectedBoxes.includes(key)) {
+      // 이미 선택된 Chip 클릭 시 해제 및 초기화
+      setSelectedBoxes([]);
+      setBox({ width: '0', length: '0', height: '0' });
+    } else {
+      // 선택한 Chip의 박스 크기로 설정
+      const targetBox = presetBoxes[key];
+      setBox(targetBox);
+      // 같은 크기의 Chip 모두 활성화
+      const matchedKeys = Object.keys(presetBoxes).filter(
+        (k) =>
+          presetBoxes[k].width === targetBox.width &&
+          presetBoxes[k].length === targetBox.length &&
+          presetBoxes[k].height === targetBox.height
+      );
+      setSelectedBoxes(matchedKeys);
+    }
   };
 
   const calculateBoxes = (truck) => {
     const truckVolume = truck.width * truck.length * truck.height;
     const boxVolume = box.width * box.length * box.height;
-
     if (!boxVolume || boxVolume === 0) return '-';
-
     const countByWidth = Math.floor(truck.width / box.width);
     const countByLength = Math.floor(truck.length / box.length);
     const countByHeight = Math.floor(truck.height / box.height);
-
     return countByWidth * countByLength * countByHeight;
   };
 
-  // 반응형 폰트 설정 (vw 단위 사용)
-  const responsiveFont = {
-    fontSize: {
-      xs: '5vw',
-      sm: '3vw',
-      md: '2vw',
-      lg: '1.5vw'
-    },
-    whiteSpace: 'nowrap'
-  };
-
   return (
-    <Container maxWidth="md" sx={{ mt: 5, backgroundColor: '#f5f7fa', p: 4, borderRadius: 3 }}>
-      <Typography align="center" gutterBottom fontWeight={600} color="primary.main" sx={responsiveFont}>
-        트럭 적재 가능 박스 수 계산기
-      </Typography>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AppBar position="static" color="primary" elevation={0}>
+        <Toolbar>
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 600 }}>
+            트럭 적재 가능 박스 수 계산기
+          </Typography>
+        </Toolbar>
+      </AppBar>
 
-      <Card sx={{ p: 3, mb: 4, backgroundColor: '#ffffff', boxShadow: 3, borderRadius: 2 }}>
-        <Typography gutterBottom color="text.primary" sx={responsiveFont}>
-          박스 크기 입력 (단위: mm)
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="가로 (mm)" name="width" value={box.width} onChange={handleChange} type="number" variant="outlined" />
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Grid container spacing={4}>
+          {/* 입력 섹션 */}
+          <Grid item xs={12} md={4}>
+            <Card>
+              <CardHeader title="박스 크기 입력 (단위: mm)" titleTypographyProps={{ variant: 'h6' }} />
+              <CardContent>
+                <Stack spacing={3}>
+                  <TextField label="가로 (Width)" name="width" value={box.width} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">mm</InputAdornment> }} fullWidth />
+                  <TextField label="세로 (Length)" name="length" value={box.length} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">mm</InputAdornment> }} fullWidth />
+                  <TextField label="높이 (Height)" name="height" value={box.height} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">mm</InputAdornment> }} fullWidth />
+
+                  <Box pt={2}>
+                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                      빠른 선택 (박스 종류)
+                    </Typography>
+                    <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                      {Object.keys(presetBoxes).map((key) => (
+                        <Chip
+                          key={key}
+                          label={key}
+                          onClick={() => handlePresetSelect(key)}
+                          variant={selectedBoxes.includes(key) ? 'filled' : 'outlined'}
+                          color={selectedBoxes.includes(key) ? 'primary' : 'default'}
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="세로 (mm)" name="length" value={box.length} onChange={handleChange} type="number" variant="outlined" />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="높이 (mm)" name="height" value={box.height} onChange={handleChange} type="number" variant="outlined" />
+
+          {/* 결과 섹션 */}
+          <Grid item xs={12} md={8}>
+            <Card>
+              <CardHeader
+                title={`트럭 종류별 적재 가능 박스 수${selectedBoxes.length > 0 ? ` (${selectedBoxes.join(', ')})` : ''}`}
+                titleTypographyProps={{ variant: 'h6' }}
+              />
+              <CardContent>
+                <TableContainer component={Paper} variant="outlined">
+                  <Table sx={{ minWidth: 650 }}>
+                    <TableHead sx={{ bgcolor: 'grey.100' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 'bold' }}>트럭 종류</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 'bold' }}>적재 가능 박스 수</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>내부 크기 (가로×세로×높이, mm)</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {trucks.map((truck) => (
+                        <TableRow key={truck.name}>
+                          <TableCell>{truck.name}</TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 500, color: 'primary.main' }}>
+                            {calculateBoxes(truck)}
+                          </TableCell>
+                          <TableCell>{`${truck.width} × ${truck.length} × ${truck.height}`}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </CardContent>
+            </Card>
           </Grid>
         </Grid>
-      </Card>
-
-      <Card sx={{ p: 3, mb: 4, backgroundColor: '#e3f2fd', borderRadius: 2, boxShadow: 1 }}>
-        <Typography gutterBottom color="text.primary" sx={responsiveFont}>
-          빠른 선택 (박스 종류)
-        </Typography>
-        <Stack direction="row" flexWrap="wrap" spacing={2} rowGap={2}>
-          {Object.keys(presetBoxes).map((key) => (
-            <Button
-              key={key}
-              variant="contained"
-              onClick={() => handlePresetSelect(key)}
-              sx={{ backgroundColor: '#1976d2', '&:hover': { backgroundColor: '#1565c0' } }}
-            >
-              {key}
-            </Button>
-          ))}
-        </Stack>
-      </Card>
-
-      <Card sx={{ backgroundColor: '#fffde7', boxShadow: 2, borderRadius: 2 }}>
-        <CardContent>
-          <Typography gutterBottom color="text.primary" sx={responsiveFont}>
-            트럭 종류별 크기 및 적재 가능 박스 수
-          </Typography>
-          <Box sx={{ overflowX: 'auto' }}> {/* 가로 스크롤 추가 */}
-            <Table sx={{ minWidth: 600 }}> {/* 표가 잘릴 경우 스크롤 가능 */}
-              <TableHead sx={{ backgroundColor: '#f1f8e9' }}>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>트럭 종류</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>적재 가능 박스 수</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>내부 크기 (가로×세로×높이, mm)</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {trucks.map((truck) => (
-                  <TableRow key={truck.name}>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{truck.name}</TableCell>
-                    <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{calculateBoxes(truck)}</TableCell>
-                    <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{`${truck.width} × ${truck.length} × ${truck.height}`}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
-        </CardContent>
-      </Card>
-    </Container>
+      </Container>
+    </ThemeProvider>
   );
 }
